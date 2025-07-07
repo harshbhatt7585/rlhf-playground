@@ -1,0 +1,18 @@
+  0%|                                                                                                                                     | 0/3 [00:00<?, ?it/s]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+ERROR:__main__:Training failed: 'LlamaForCausalLM' object has no attribute 'score'
+Traceback (most recent call last):
+  File "/Users/harshbhatt/Projects/ai-projects/rlhf-playground/trainers/ppo_trainer.py", line 317, in <module>
+    main()
+  File "/Users/harshbhatt/Projects/ai-projects/rlhf-playground/trainers/ppo_trainer.py", line 297, in main
+    trainer.train(
+  File "/Users/harshbhatt/Projects/ai-projects/rlhf-playground/trainers/ppo_trainer.py", line 212, in train
+    self.trainer.train()
+  File "/Users/harshbhatt/miniconda3/envs/qunta-backend/lib/python3.11/site-packages/trl/trainer/ppo_trainer.py", line 466, in train
+    full_value, _, _ = get_reward(
+                       ^^^^^^^^^^^
+  File "/Users/harshbhatt/miniconda3/envs/qunta-backend/lib/python3.11/site-packages/trl/trainer/utils.py", line 1256, in get_reward
+    reward_logits = model.score(output.hidden_states[-1])
+                    ^^^^^^^^^^^
+  File "/Users/harshbhatt/miniconda3/envs/qunta-backend/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1928, in __getattr__
+    raise AttributeError(
+AttributeError: 'LlamaForCausalLM' object has no attribute 'score'

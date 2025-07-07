@@ -1,0 +1,15 @@
+{"time":"2025-07-08T02:18:43.158555+05:30","level":"INFO","msg":"stream: starting","core version":"0.19.11","symlink path":"/Users/harshbhatt/Projects/ai-projects/rlhf-playground/wandb/run-20250708_021843-v74vg0kb/logs/debug-core.log"}
+{"time":"2025-07-08T02:18:43.81592+05:30","level":"INFO","msg":"created new stream","id":"v74vg0kb"}
+{"time":"2025-07-08T02:18:43.815963+05:30","level":"INFO","msg":"stream: started","id":"v74vg0kb"}
+{"time":"2025-07-08T02:18:43.815978+05:30","level":"INFO","msg":"writer: Do: started","stream_id":"v74vg0kb"}
+{"time":"2025-07-08T02:18:43.816008+05:30","level":"INFO","msg":"sender: started","stream_id":"v74vg0kb"}
+{"time":"2025-07-08T02:18:43.815999+05:30","level":"INFO","msg":"handler: started","stream_id":"v74vg0kb"}
+{"time":"2025-07-08T02:18:44.220397+05:30","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-07-08T02:20:19.961065+05:30","level":"INFO","msg":"stream: closing","id":"v74vg0kb"}
+{"time":"2025-07-08T02:20:19.961109+05:30","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-07-08T02:20:19.961186+05:30","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-07-08T02:20:21.885974+05:30","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-07-08T02:20:22.404532+05:30","level":"INFO","msg":"sender: closed","stream_id":"v74vg0kb"}
+{"time":"2025-07-08T02:20:22.404537+05:30","level":"INFO","msg":"handler: closed","stream_id":"v74vg0kb"}
+{"time":"2025-07-08T02:20:22.40461+05:30","level":"INFO","msg":"writer: Close: closed","stream_id":"v74vg0kb"}
+{"time":"2025-07-08T02:20:22.407947+05:30","level":"INFO","msg":"stream: closed","id":"v74vg0kb"}
