@@ -1,0 +1,7 @@
+numpy
+pandas
+torch
+tensorflow
+scikit-learn
+streamlit
+pyyaml
