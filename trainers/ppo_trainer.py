@@ -12,6 +12,7 @@ from transformers import (
 from datasets import Dataset, load_dataset
 from accelerate import PartialState
 from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
+import random
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +30,7 @@ class PPOTrainerWrapper:
                  num_mini_batches: int = 1,
                  response_length: int = 64,
                  total_episodes: int = 1000,
-                 exp_name: str = "ppo-training-fixed"):
+                 exp_name: str = "ppo-arxiv-abstracts"):
 
         self.model_name = model_name
         self.reward_model_name = reward_model_name
@@ -166,20 +167,22 @@ def main():
         total_episodes=100
     )
 
-    logger.info("Loading dataset...")
-    dataset = load_dataset("trl-internal-testing/descriptiveness-sentiment-trl-style", split="descriptiveness")
+    logger.info("Loading arXiv summarization dataset...")
+    dataset = load_dataset("ccdv/arxiv-summarization", "section")["train"].select(range(1000))
 
-    eval_samples = 100
-    train_dataset = dataset.select(range(len(dataset) - eval_samples))
-    eval_dataset = dataset.select(range(len(dataset) - eval_samples, len(dataset)))
+    # We'll treat 'article' as the prompt
+    dataset_list = dataset.to_list()
 
-    with PartialState().local_main_process_first():
-        train_dataset = trainer.prepare_dataset(train_dataset, "prompt")
-        eval_dataset = trainer.prepare_dataset(eval_dataset, "prompt")
+    # Truncate articles for both train and eval
+    train_prompts = ["Write a abstract of this articl:  "+ x["article"][:512] for x in dataset_list[:-200]]
+    eval_prompts = ["Write a abstract of this articl:  "+ x["article"][:512] for x in dataset_list[-200:]]
+
+    logger.info("Preparing PPO-compatible prompt dataset...")
+    train_dataset = trainer.create_dataset_from_prompts(train_prompts)
+    eval_dataset = trainer.create_dataset_from_prompts(eval_prompts)  # Optionally, you can create an evaluation dataset
 
     trainer.train(train_dataset=train_dataset, eval_dataset=eval_dataset)
-    trainer.save_model("./final_ppo_model_fixed")
-
+    trainer.save_model("./ppo_model_arxiv")
 
 
 if __name__ == "__main__":
