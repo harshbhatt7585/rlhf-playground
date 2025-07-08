@@ -18,6 +18,34 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class RewardModel:
+    def __init__(self, model_name: str):
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=1)
+    
+    def score(self, inputs: Union[List[str], List[Dict[str, Any]]]) -> np.ndarray:
+        """
+        Score the inputs using the reward model
+        """
+        if isinstance(inputs, list) and isinstance(inputs[0], str):
+            inputs = [{"text": text} for text in inputs]
+        
+        # Tokenize inputs
+        tokenized_inputs = self.model.tokenizer(
+            [inp['text'] for inp in inputs],
+            return_tensors="pt",
+            padding=True,
+            truncation=True
+        )
+        
+        # Forward pass through the model
+        with torch.no_grad():
+            outputs = self.model(**tokenized_inputs)
+        
+        # Extract scores (logits)
+        scores = outputs.logits.squeeze().cpu().numpy()
+        
+        return scores
+
 class PPOTrainerWrapper:
     """
     Wrapper class for PPO training with TinyLlama model
@@ -81,7 +109,8 @@ class PPOTrainerWrapper:
             logging_steps=10,
             output_dir="./ppo_outputs"
         )
-        
+    
+
         # Initialize tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         if self.tokenizer.pad_token is None:
@@ -116,6 +145,8 @@ class PPOTrainerWrapper:
             )
             if torch.cuda.is_available():
                 self.policy_model = self.policy_model.to(self.device)
+        
+        self.reward_model = RewardModel(model_name)
         
         # Load reference model (separate copy for PPO)
         self.ref_model = AutoModelForCausalLM.from_pretrained(
