@@ -10,11 +10,11 @@ from transformers import (
     TrainingArguments,
     Trainer
 )
+import wandb  # <-- Added
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 
 class RewardDataset(TorchDataset):
@@ -47,7 +47,6 @@ class RewardDataset(TorchDataset):
             "input_ids_rejected": rejected_enc["input_ids"].squeeze(0),
             "attention_mask_rejected": rejected_enc["attention_mask"].squeeze(0)
         }
-
 
 
 class RewardDataCollator:
@@ -99,7 +98,6 @@ class RewardTrainer(Trainer):
         return loss.detach(), None, None
 
 
-
 def train_reward_model(model_name="distilbert-base-uncased", dataset_path="dataset/arxiv_summarization_dataset"):
     logger.info("Loading tokenizer and model...")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -123,6 +121,8 @@ def train_reward_model(model_name="distilbert-base-uncased", dataset_path="datas
     os.makedirs("./reward_model", exist_ok=True)
     os.makedirs("./logs", exist_ok=True)
 
+    wandb.init(project="reward-model", name="reward-training")  # <-- Added
+
     training_args = TrainingArguments(
         output_dir="./reward_model",
         per_device_train_batch_size=2,
@@ -134,7 +134,7 @@ def train_reward_model(model_name="distilbert-base-uncased", dataset_path="datas
         learning_rate=1e-5,
         logging_steps=10,
         remove_unused_columns=False,
-        report_to="none",
+        report_to="wandb",  # <-- Changed from "none"
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
@@ -162,7 +162,6 @@ def train_reward_model(model_name="distilbert-base-uncased", dataset_path="datas
     except Exception as e:
         logger.error(f"Training failed: {str(e)}")
         raise
-
 
 
 if __name__ == "__main__":
