@@ -10,7 +10,7 @@ from transformers import (
     TrainingArguments,
     Trainer
 )
-import wandb  # <-- Added
+import wandb 
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -45,7 +45,7 @@ class RewardDataset(TorchDataset):
             "input_ids_chosen": chosen_enc["input_ids"].squeeze(0),
             "attention_mask_chosen": chosen_enc["attention_mask"].squeeze(0),
             "input_ids_rejected": rejected_enc["input_ids"].squeeze(0),
-            "attention_mask_rejected": rejected_enc["attention_mask"].squeeze(0)
+            "attention_mask_rejected": rejected_enc["attention_mask"].squeeze(0),
         }
 
 
@@ -97,6 +97,52 @@ class RewardTrainer(Trainer):
         loss = self.compute_loss(model, inputs)
         return loss.detach(), None, None
 
+    def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix="eval"):
+        metrics = super().evaluate(eval_dataset, ignore_keys, metric_key_prefix)
+
+        # Only run on eval set and if wandb is active
+        if self.args.report_to and "wandb" in self.args.report_to:
+            model = self.model.eval()
+            device = model.device
+            table = wandb.Table(columns=["index", "prompt (chosen)", "prompt (rejected)", "chosen_reward", "rejected_reward"])
+
+            for i, batch in enumerate(self.get_eval_dataloader()):
+                inputs = {k: v.to(device) for k, v in batch.items()}
+                with torch.no_grad():
+                    chosen_reward = model(
+                        input_ids=inputs["input_ids_chosen"],
+                        attention_mask=inputs["attention_mask_chosen"]
+                    ).logits.squeeze(-1)
+
+                    rejected_reward = model(
+                        input_ids=inputs["input_ids_rejected"],
+                        attention_mask=inputs["attention_mask_rejected"]
+                    ).logits.squeeze(-1)
+
+                    for j in range(chosen_reward.size(0)):
+                        prompt_chosen = self.tokenizer.decode(
+                            inputs["input_ids_chosen"][j],
+                            skip_special_tokens=True,
+                            clean_up_tokenization_spaces=True
+                        )
+                        prompt_rejected = self.tokenizer.decode(
+                            inputs["input_ids_rejected"][j],
+                            skip_special_tokens=True,
+                            clean_up_tokenization_spaces=True
+                        )
+
+                        table.add_data(
+                            i * chosen_reward.size(0) + j,
+                            prompt_chosen,
+                            prompt_rejected,
+                            chosen_reward[j].item(),
+                            rejected_reward[j].item()
+                        )
+
+            wandb.log({"eval_table/reward_comparison_table": table})
+
+        return metrics
+
 
 def train_reward_model(model_name="distilbert-base-uncased", dataset_path="dataset/arxiv_summarization_dataset"):
     logger.info("Loading tokenizer and model...")
@@ -134,7 +180,7 @@ def train_reward_model(model_name="distilbert-base-uncased", dataset_path="datas
         learning_rate=1e-5,
         logging_steps=10,
         remove_unused_columns=False,
-        report_to="wandb",  # <-- Changed from "none"
+        report_to="wandb", 
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
@@ -146,7 +192,7 @@ def train_reward_model(model_name="distilbert-base-uncased", dataset_path="datas
 
     trainer = RewardTrainer(
         model=model,
-        args=training_args,
+        args=training_args, 
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
