@@ -12,12 +12,28 @@ from transformers import (
 from datasets import Dataset, load_dataset
 from accelerate import PartialState
 from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
-import random
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+class PromptDataset(Dataset):
+    def __init__(self, prompts: List[str], tokenizer: AutoTokenizer):
+        prompts = [tokenizer.apply_chat_template(
+            [{"role": "user", "content": prompt}],
+            tokenize=False,
+            add_generation_prompt=True,
+        ) for prompt in prompts]
+        print(prompts)
+        self.prompts = tokenizer(prompts, padding=True, truncation=True, return_tensors="pt")["input_ids"]
+
+        self.tokenizer = tokenizer
+        
+    def __len__(self):
+        return len(self.prompts)
+
+    def __getitem__(self, idx):
+        return {"input_ids": self.prompts[idx]}
 
 class PPOTrainerWrapper:
     def __init__(self,
@@ -34,7 +50,7 @@ class PPOTrainerWrapper:
 
         self.model_name = model_name
         self.reward_model_name = reward_model_name
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "mps")
 
         if torch.cuda.is_available():
             logger.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
@@ -58,6 +74,7 @@ class PPOTrainerWrapper:
             save_steps=200,
             logging_steps=20,
             output_dir="./ppo_outputs",
+            bf16=True,
         )
 
         # Tokenizer
@@ -69,58 +86,44 @@ class PPOTrainerWrapper:
         self._load_models()
 
     def _load_models(self):
-        dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+        torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
         self.policy_model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
             trust_remote_code=True,
+            low_cpu_mem_usage=True,
+            device_map="auto",
         )
+        self.policy_model.gradient_checkpointing_enable()
 
         self.ref_model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
             trust_remote_code=True,
+            low_cpu_mem_usage=True,
+            device_map="auto",
         )
 
         self.reward_model = AutoModelForSequenceClassification.from_pretrained(
             self.reward_model_name,
             num_labels=1,
             trust_remote_code=True,
+            low_cpu_mem_usage=True,
+            device_map="auto",
         )
 
         self.value_model = AutoModelForSequenceClassification.from_pretrained(
             self.reward_model_name,
             num_labels=1,
             trust_remote_code=True,
+            low_cpu_mem_usage=True,
+            device_map="auto",
         )
 
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             gc.collect()
-
-    def prepare_dataset(self, dataset: Dataset, dataset_text_field: str = "prompt") -> Dataset:
-        def tokenize(element):
-            outputs = self.tokenizer(
-                element[dataset_text_field],
-                padding="max_length",
-                truncation=True,
-                max_length=128,
-                return_attention_mask=True,
-            )
-            return {
-                "input_ids": outputs["input_ids"],
-                "attention_mask": outputs["attention_mask"]
-            }
-
-        return dataset.map(
-            tokenize,
-            batched=True,
-            remove_columns=dataset.column_names,
-            num_proc=self.config.dataset_num_proc,
-        )
-
-    def create_dataset_from_prompts(self, prompts: List[str]) -> Dataset:
-        dataset = Dataset.from_dict({"prompt": prompts})
-        return self.prepare_dataset(dataset)
+    
+        
 
     def initialize_trainer(self, train_dataset: Dataset, eval_dataset: Optional[Dataset] = None):
         self.trainer = PPOTrainer(
@@ -157,32 +160,31 @@ class PPOTrainerWrapper:
 
 def main():
     trainer = PPOTrainerWrapper(
-        model_name="microsoft/DialoGPT-small",
-        reward_model_name="microsoft/DialoGPT-small",
+        model_name="HuggingFaceTB/SmolLM-135M-Instruct",
+        reward_model_name="HuggingFaceTB/SmolLM-135M-Instruct",
         per_device_train_batch_size=1,
         gradient_accumulation_steps=1,
         num_ppo_epochs=1,
         num_mini_batches=1,
-        response_length=32,
+        response_length=512,
         total_episodes=100
     )
 
     logger.info("Loading arXiv summarization dataset...")
-    dataset = load_dataset("ccdv/arxiv-summarization", "section")["train"].select(range(1000))
+    train_dataset = load_dataset("ccdv/arxiv-summarization", "section")["train"].select(range(10))
+    eval_dataset = load_dataset("ccdv/arxiv-summarization", "section")["validation"].select(range(10))
 
-    # We'll treat 'article' as the prompt
-    dataset_list = dataset.to_list()
 
     # Truncate articles for both train and eval
-    train_prompts = ["Write a abstract of this articl:  "+ x["article"][:512] for x in dataset_list[:-200]]
-    eval_prompts = ["Write a abstract of this articl:  "+ x["article"][:512] for x in dataset_list[-200:]]
+    train_prompts = ["Write a abstract of this article:  "+ x["article"][:1024] for x in train_dataset]
+    eval_prompts = ["Write a abstract of this article:  "+ x["article"][:1024] for x in eval_dataset]
 
     logger.info("Preparing PPO-compatible prompt dataset...")
-    train_dataset = trainer.create_dataset_from_prompts(train_prompts)
-    eval_dataset = trainer.create_dataset_from_prompts(eval_prompts)  # Optionally, you can create an evaluation dataset
+    train_dataset = PromptDataset(train_prompts, trainer.tokenizer)
+    eval_dataset = PromptDataset(eval_prompts, trainer.tokenizer)
 
     trainer.train(train_dataset=train_dataset, eval_dataset=eval_dataset)
-    trainer.save_model("./ppo_model_arxiv")
+    # trainer.save_model("./ppo_model_arxiv")
 
 
 if __name__ == "__main__":
