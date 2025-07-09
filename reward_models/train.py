@@ -11,6 +11,7 @@ from transformers import (
     Trainer
 )
 import wandb 
+from reward_models.reward_trainer import RewardTrainer
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -62,36 +63,6 @@ class RewardDataCollator:
         }
 
 
-class RewardTrainer(Trainer):
-    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
-        device = model.device
-
-        chosen_outputs = model(
-            input_ids=inputs["input_ids_chosen"].to(device),
-            attention_mask=inputs["attention_mask_chosen"].to(device)
-        )
-        rejected_outputs = model(
-            input_ids=inputs["input_ids_rejected"].to(device),
-            attention_mask=inputs["attention_mask_rejected"].to(device)
-        )
-
-        chosen_reward = chosen_outputs.logits.squeeze(-1)
-        rejected_reward = rejected_outputs.logits.squeeze(-1)
-
-        # Ensure dimensions
-        if chosen_reward.dim() == 0:
-            chosen_reward = chosen_reward.unsqueeze(0)
-        if rejected_reward.dim() == 0:
-            rejected_reward = rejected_reward.unsqueeze(0)
-
-        loss = -torch.nn.functional.logsigmoid(chosen_reward - rejected_reward).mean()
-
-        if return_outputs:
-            return loss, {
-                "chosen_reward": chosen_reward.detach(),
-                "rejected_reward": rejected_reward.detach()
-            }
-        return loss
 
     def prediction_step(self, model, inputs, prediction_loss_only=False, ignore_keys=None):
         loss = self.compute_loss(model, inputs)
@@ -171,8 +142,8 @@ def train_reward_model(model_name="distilbert-base-uncased", dataset_path="datas
 
     training_args = TrainingArguments(
         output_dir="./reward_model",
-        per_device_train_batch_size=2,
-        per_device_eval_batch_size=2,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
         num_train_epochs=3,
         logging_dir="./logs",
         eval_strategy="epoch",
@@ -212,7 +183,7 @@ def train_reward_model(model_name="distilbert-base-uncased", dataset_path="datas
 
 if __name__ == "__main__":
     try:
-        train_reward_model("distilbert-base-uncased", "dataset/arxiv_summarization_dataset")
+        train_reward_model("microsoft/DialoGPT-small", "dataset/arxiv_summarization_dataset")
     except Exception as e:
         logger.error(f"Error in main: {str(e)}")
         raise
