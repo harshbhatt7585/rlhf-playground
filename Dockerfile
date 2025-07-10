@@ -2,26 +2,20 @@ FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-
-
 RUN apt-get update && apt-get install -y \
     python3-pip \
     git \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
-RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN ln -sf /usr/bin/python3 /usr/bin/python
 
-COPY . /app
-
+COPY requirements.txt /app/requirements.txt
 WORKDIR /app
 
-RUN pip install --upgrade pip
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
 
-
-RUN pip install -r requirements.txt
-
-
-
+COPY . /app
 
 CMD ["python", "example.py"]
