@@ -1,11 +1,19 @@
 import logging
 from datasets import load_dataset
-from trainer.ppo_trainer_wrapper import PPOTrainerWrapper
+from trainers.ppo_trainer import PPOTrainerWrapper
 from dataset.prompt_dataset import PromptDataset
+import os
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 
 def main():
     trainer = PPOTrainerWrapper(
@@ -15,9 +23,13 @@ def main():
         gradient_accumulation_steps=1,
         num_ppo_epochs=1,
         num_mini_batches=1,
-        response_length=512,
-        total_episodes=100
+        response_length=10,
+        total_episodes=1,
+        upload_to_hf=True,
+        hf_token=os.environ['HF_TOKEN'],
+        repo_id="test-model"
     )
+    print(os.environ['HF_TOKEN'])
 
     logger.info("Loading dataset...")
     raw_train = load_dataset("ccdv/arxiv-summarization", "section")["train"].select(range(10))
