@@ -13,6 +13,7 @@ from datasets import Dataset, load_dataset
 from accelerate import PartialState
 from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
 from dataset.prompt_dataset import PromptDataset
+from upload_to_hf import upload_to_hf
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -31,11 +32,17 @@ class PPOTrainerWrapper:
                  num_mini_batches: int = 1,
                  response_length: int = 64,
                  total_episodes: int = 1000,
-                 exp_name: str = "ppo-arxiv-abstracts"):
+                 exp_name: str = "ppo-arxiv-abstracts",
+                 upload_to_hf: bool = False,
+                 repo_id: str | None = None
+                ):
 
         self.model_name = model_name
         self.reward_model_name = reward_model_name
         self.device = torch.device("cuda" if torch.cuda.is_available() else "mps")
+
+        self.upload_to_hf = upload_to_hf
+        self.repo_id = repo_id
 
         if torch.cuda.is_available():
             logger.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
@@ -132,6 +139,14 @@ class PPOTrainerWrapper:
         self.trainer.train()
         logger.info("Training complete.")
 
+
+
+        if self.upload_to_hf:
+            output_dir = "./output"
+            self.save_model(output_dir)
+            upload_to_hf(self.repo_id, output_dir)
+
+
     def save_model(self, output_dir: str):
         os.makedirs(output_dir, exist_ok=True)
         self.trainer.save_model(output_dir)
@@ -141,6 +156,12 @@ class PPOTrainerWrapper:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             gc.collect()
+
+    def save_model(self, output_dir: str = "./output"):
+        os.makedirs(output_dir, exist_ok=True)
+        self.policy_model.save_pretrained(output_dir)
+        self.tokenizer.save_pretrained(output_dir)
+        logging.info(f"Policy model + tokenizer saved to {output_dir}")
 
 
 def main():
