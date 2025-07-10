@@ -12,33 +12,18 @@ from transformers import (
 from datasets import Dataset, load_dataset
 from accelerate import PartialState
 from trl.trainer.utils import SIMPLE_CHAT_TEMPLATE
+from dataset.prompt_dataset import PromptDataset
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class PromptDataset(Dataset):
-    def __init__(self, prompts: List[str], tokenizer: AutoTokenizer):
-        prompts = [tokenizer.apply_chat_template(
-            [{"role": "user", "content": prompt}],
-            tokenize=False,
-            add_generation_prompt=True,
-        ) for prompt in prompts]
-        print(prompts)
-        self.prompts = tokenizer(prompts, padding=True, truncation=True, return_tensors="pt")["input_ids"]
 
-        self.tokenizer = tokenizer
-        
-    def __len__(self):
-        return len(self.prompts)
-
-    def __getitem__(self, idx):
-        return {"input_ids": self.prompts[idx]}
 
 class PPOTrainerWrapper:
     def __init__(self,
                  model_name: str = "microsoft/DialoGPT-small",
-                 reward_model_name: str = "microsoft/DialoGPT-small",
+                 reward_model_name: str = "./reward_model",
                  learning_rate: float = 3e-6,
                  per_device_train_batch_size: int = 1,
                  gradient_accumulation_steps: int = 1,
@@ -176,8 +161,8 @@ def main():
 
 
     # Truncate articles for both train and eval
-    train_prompts = ["Write a abstract of this article:  "+ x["article"][:1024] for x in train_dataset]
-    eval_prompts = ["Write a abstract of this article:  "+ x["article"][:1024] for x in eval_dataset]
+    train_prompts = ["Write a abstract of this article:  "+ x["article"][:2048] for x in train_dataset]
+    eval_prompts = ["Write a abstract of this article:  "+ x["article"][:2048] for x in eval_dataset]
 
     logger.info("Preparing PPO-compatible prompt dataset...")
     train_dataset = PromptDataset(train_prompts, trainer.tokenizer)
