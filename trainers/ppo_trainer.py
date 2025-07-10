@@ -20,7 +20,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-
 class PPOTrainerWrapper:
     def __init__(self,
                  model_name: str = "microsoft/DialoGPT-small",
@@ -34,7 +33,8 @@ class PPOTrainerWrapper:
                  total_episodes: int = 1000,
                  exp_name: str = "ppo-arxiv-abstracts",
                  upload_to_hf: bool = False,
-                 repo_id: str | None = None
+                 repo_id: str | None = None,
+                 hf_token: str | None = None
                 ):
 
         self.model_name = model_name
@@ -43,6 +43,7 @@ class PPOTrainerWrapper:
 
         self.upload_to_hf = upload_to_hf
         self.repo_id = repo_id
+        self.hf_token = hf_token
 
         if torch.cuda.is_available():
             logger.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
@@ -142,56 +143,14 @@ class PPOTrainerWrapper:
 
 
         if self.upload_to_hf:
-            output_dir = "./output"
-            self.save_model(output_dir)
-            upload_to_hf(self.repo_id, output_dir)
+            if self.hf_token is None:
+                ValueError("hf_token is not provided")
+            output_dir = "./ppo_outputs"
+            upload_to_hf(self.repo_id, output_dir, hf_token=self.hf_token)
 
 
-    def save_model(self, output_dir: str):
-        os.makedirs(output_dir, exist_ok=True)
-        self.trainer.save_model(output_dir)
-        logger.info(f"Model saved to {output_dir}")
 
     def cleanup(self):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             gc.collect()
-
-    def save_model(self, output_dir: str = "./output"):
-        os.makedirs(output_dir, exist_ok=True)
-        self.policy_model.save_pretrained(output_dir)
-        self.tokenizer.save_pretrained(output_dir)
-        logging.info(f"Policy model + tokenizer saved to {output_dir}")
-
-
-def main():
-    trainer = PPOTrainerWrapper(
-        model_name="HuggingFaceTB/SmolLM-135M-Instruct",
-        reward_model_name="HuggingFaceTB/SmolLM-135M-Instruct",
-        per_device_train_batch_size=1,
-        gradient_accumulation_steps=1,
-        num_ppo_epochs=1,
-        num_mini_batches=1,
-        response_length=512,
-        total_episodes=100
-    )
-
-    logger.info("Loading arXiv summarization dataset...")
-    train_dataset = load_dataset("ccdv/arxiv-summarization", "section")["train"].select(range(10))
-    eval_dataset = load_dataset("ccdv/arxiv-summarization", "section")["validation"].select(range(10))
-
-
-    # Truncate articles for both train and eval
-    train_prompts = ["Write a abstract of this article:  "+ x["article"][:2048] for x in train_dataset]
-    eval_prompts = ["Write a abstract of this article:  "+ x["article"][:2048] for x in eval_dataset]
-
-    logger.info("Preparing PPO-compatible prompt dataset...")
-    train_dataset = PromptDataset(train_prompts, trainer.tokenizer)
-    eval_dataset = PromptDataset(eval_prompts, trainer.tokenizer)
-
-    trainer.train(train_dataset=train_dataset, eval_dataset=eval_dataset)
-    # trainer.save_model("./ppo_model_arxiv")
-
-
-if __name__ == "__main__":
-    main()
