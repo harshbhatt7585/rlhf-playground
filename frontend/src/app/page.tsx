@@ -190,38 +190,7 @@ const Navigation: React.FC = () => {
 };
 
 export default function Home() {
-  const features: FeatureCardProps[] = [
-    {
-      icon: '🧠',
-      title: 'Advanced NLP Processing',
-      description: 'Leverage state-of-the-art natural language processing to understand and align model behavior with human intentions and values.'
-    },
-    {
-      icon: '⚡',
-      title: 'Real-time Alignment',
-      description: 'Monitor and adjust model alignment in real-time, ensuring consistent performance and safety across all interactions.'
-    },
-    {
-      icon: '🔒',
-      title: 'Safety First',
-      description: 'Built-in safety mechanisms prevent harmful outputs and ensure your AI systems remain trustworthy and reliable.'
-    },
-    {
-      icon: '📊',
-      title: 'Comprehensive Analytics',
-      description: 'Detailed insights and metrics help you understand model performance and track alignment improvements over time.'
-    },
-    {
-      icon: '🔧',
-      title: 'Easy Integration',
-      description: 'Seamlessly integrate with your existing AI infrastructure through our robust APIs and developer-friendly tools.'
-    },
-    {
-      icon: '🌍',
-      title: 'Scalable Solution',
-      description: 'From small experiments to enterprise-scale deployments, our platform grows with your needs.'
-    }
-  ];
+
 
   const stats: StatItemProps[] = [
     { number: '99.9%', label: 'Alignment Accuracy' },
@@ -262,19 +231,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-32 bg-white/5 backdrop-blur-sm" id="features">
-        <div className="max-w-7xl mx-auto px-8">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 bg-gradient-to-r from-white to-cyan-400 bg-clip-text text-transparent">
-            Powerful Features
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <FeatureCard key={index} {...feature} />
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Stats Section */}
       <section className="py-24 bg-gradient-to-r from-cyan-400/10 to-purple-500/10">
