@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import NeuralNetworkVisualization from '@/components/NNVisualization';
 
 interface StatItemProps {
   number: string;
@@ -31,119 +32,6 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description }) =
     <p className="text-gray-400 leading-relaxed">{description}</p>
   </div>
 );
-
-const NeuralNetworkVisualization: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const animationIdRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
-    
-    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    rendererRef.current = renderer;
-    
-    renderer.setSize(400, 400);
-    renderer.setClearColor(0x000000, 0);
-    containerRef.current.appendChild(renderer.domElement);
-
-    // Create nodes
-    const nodes: Array<{ mesh: THREE.Mesh; layer: number; index: number }> = [];
-    const connections: THREE.Line[] = [];
-    
-    // Node layers
-    const layers = [4, 6, 6, 4, 1];
-    let nodeIndex = 0;
-    
-    layers.forEach((layerSize, layerIndex) => {
-      for (let i = 0; i < layerSize; i++) {
-        const geometry = new THREE.SphereGeometry(0.05, 16, 16);
-        const material = new THREE.MeshBasicMaterial({ 
-          color: new THREE.Color().setHSL(0.6 + Math.random() * 0.4, 0.8, 0.6),
-          transparent: true,
-          opacity: 0.8
-        });
-        const node = new THREE.Mesh(geometry, material);
-        
-        const x = (layerIndex - layers.length / 2) * 0.8;
-        const y = (i - layerSize / 2) * 0.4;
-        const z = (Math.random() - 0.5) * 0.3;
-        
-        node.position.set(x, y, z);
-        scene.add(node);
-        nodes.push({ mesh: node, layer: layerIndex, index: nodeIndex++ });
-      }
-    });
-
-    // Create connections
-    nodes.forEach(node => {
-      if (node.layer < layers.length - 1) {
-        const nextLayerNodes = nodes.filter(n => n.layer === node.layer + 1);
-        nextLayerNodes.forEach(nextNode => {
-          if (Math.random() > 0.3) {
-            const geometry = new THREE.BufferGeometry().setFromPoints([
-              node.mesh.position,
-              nextNode.mesh.position
-            ]);
-            const material = new THREE.LineBasicMaterial({ 
-              color: 0x00d4ff,
-              transparent: true,
-              opacity: 0.3
-            });
-            const line = new THREE.Line(geometry, material);
-            scene.add(line);
-            connections.push(line);
-          }
-        });
-      }
-    });
-
-    camera.position.z = 3;
-
-    // Animation
-    const animate = () => {
-      animationIdRef.current = requestAnimationFrame(animate);
-      
-      // Rotate the entire network
-      scene.rotation.y += 0.005;
-      scene.rotation.x += 0.002;
-      
-      // Animate nodes
-      nodes.forEach((node, index) => {
-        const time = Date.now() * 0.001;
-        (node.mesh.material as THREE.MeshBasicMaterial).opacity = 0.5 + Math.sin(time + index * 0.1) * 0.3;
-      });
-      
-      // Animate connections
-      connections.forEach((connection, index) => {
-        const time = Date.now() * 0.001;
-        (connection.material as THREE.LineBasicMaterial).opacity = 0.1 + Math.sin(time + index * 0.05) * 0.2;
-      });
-      
-      renderer.render(scene, camera);
-    };
-    
-    animate();
-
-    // Cleanup
-    return () => {
-      if (animationIdRef.current) {
-        cancelAnimationFrame(animationIdRef.current);
-      }
-      if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
-      }
-      renderer.dispose();
-    };
-  }, []);
-
-  return <div ref={containerRef} className="w-96 h-96 flex items-center justify-center" />;
-};
 
 const Navigation: React.FC = () => {
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
