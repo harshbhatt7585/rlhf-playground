@@ -44,12 +44,11 @@ export default function PromptPage() {
         aria-label="Model alignment prompt form"
       >
         <div className="relative">
-          <input
-            type="text"
+          <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Enter your prompt..."
-            className="w-full px-6 py-4 bg-gray-800 text-white placeholder-gray-400 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out"
+            className="w-full px-6 py-4 bg-gray-800 text-white placeholder-gray-400 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out resize-y min-h-[100px]"
             aria-label="Prompt input"
             disabled={isLoading}
           />
@@ -74,7 +73,7 @@ export default function PromptPage() {
                 className="animate-spin h-5 w-5 mr-2 text-white"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
-                viewBox="0 0 24 24"
+                viewBox="0 24 24"
               >
                 <circle
                   className="opacity-25"
