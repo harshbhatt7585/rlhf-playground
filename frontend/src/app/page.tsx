@@ -62,7 +62,7 @@ const Navigation: React.FC = () => {
     <nav className="fixed top-0 w-full backdrop-blur-xl z-50 py-4 transition-all duration-300" style={{ background: 'rgba(10, 10, 10, 0.7)' }}>
       <div className="max-w-7xl mx-auto px-8">
         <div className="flex justify-between items-center">
-          <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <div className="text-3xl font-bold bg-gradient-to-r from-emerald-400 via-teal-500 to-blue-600 bg-clip-text text-transparent">
             AlignAI
           </div>
           <ul className="hidden md:flex space-x-8">
@@ -78,8 +78,6 @@ const Navigation: React.FC = () => {
 };
 
 export default function Home() {
-
-
   const stats: StatItemProps[] = [
     { number: '99.9%', label: 'Alignment Accuracy' },
     { number: '10x', label: 'Faster Processing' },
@@ -104,7 +102,7 @@ export default function Home() {
                 Achieve unprecedented accuracy, safety, and reliability.
               </p>
               <div className="flex flex-col sm:flex-row gap-6">
-                <button className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-semibold rounded-full text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-cyan-500/30 flex items-center gap-2">
+                <button className="px-8 py-4 bg-gradient-to-r from-emerald-400 via-teal-500 to-blue-600 text-white font-semibold rounded-full text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/30 flex items-center gap-2">
                   Get Started
                 </button>
                 <button className="px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-full text-lg transition-all duration-300 hover:bg-white hover:text-gray-900 hover:-translate-y-1 flex items-center gap-2">
@@ -118,7 +116,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
 
       {/* Stats Section */}
       <section className="py-24 bg-gradient-to-r from-cyan-400/10 to-purple-500/10">
@@ -135,7 +132,7 @@ export default function Home() {
       <footer className="py-12 bg-black/50">
         <div className="max-w-7xl mx-auto px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+            <div className="text-3xl font-bold bg-gradient-to-r from-emerald-400 via-teal-500 to-blue-600 bg-clip-text text-transparent">
               AlignAI
             </div>
             <ul className="flex flex-wrap gap-8">
