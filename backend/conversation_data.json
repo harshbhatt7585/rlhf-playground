@@ -1,0 +1,20 @@
+[
+  {
+    "prompt": "Hello",
+    "response": "Hello! How can I assist you today?",
+    "user_feedback": null,
+    "timestamp": "2025-07-12T00:30:50.502043"
+  },
+  {
+    "prompt": "How are you doing?",
+    "response": "I'm doing well, thank you! How about you? How can I help you today?",
+    "user_feedback": null,
+    "timestamp": "2025-07-12T00:30:59.050583"
+  },
+  {
+    "prompt": "This is awesome",
+    "response": "I'm glad you think so! \ud83d\ude0a Is there anything specific you'd like to talk about or need help with?",
+    "user_feedback": null,
+    "timestamp": "2025-07-12T00:31:07.366351"
+  }
+]
