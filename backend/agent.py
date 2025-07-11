@@ -1,10 +1,13 @@
-import openai
+from openai import AsyncAzureOpenAI
 from typing import List, Dict, Optional
 import json
 import os
 import asyncio
 from datetime import datetime
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), '../.env'))
 
 # Define data structure for storing conversation and feedback
 class ConversationData(BaseModel):
@@ -14,9 +17,18 @@ class ConversationData(BaseModel):
     timestamp: str
 
 class RLHFAgent:
-    def __init__(self, api_key: str, model: str = "gpt-4o", data_file: str = "conversation_data.json"):
-        self.client = openai.AsyncOpenAI(api_key=api_key)
-        self.model = model
+    def __init__(self, 
+                 api_key: str, 
+                 endpoint: str, 
+                 deployment_name: str, 
+                 api_version: str = "2024-02-01", 
+                 data_file: str = "conversation_data.json"):
+        self.client = AsyncAzureOpenAI(
+            api_key=api_key,
+            azure_endpoint=endpoint,
+            api_version=api_version
+        )
+        self.deployment_name = deployment_name
         self.data_file = data_file
         
         # Initialize conversation data storage
@@ -79,7 +91,7 @@ class RLHFAgent:
             messages.append({"role": "user", "content": user_input})
             
             response = await self.client.chat.completions.create(
-                model=self.model,
+                model=self.deployment_name,
                 messages=messages,
                 max_tokens=1000,
                 temperature=0.7
@@ -172,7 +184,7 @@ class RLHFAgent:
             """
             
             response = await self.client.chat.completions.create(
-                model=self.model,
+                model=self.deployment_name,
                 messages=[
                     {"role": "system", "content": self.evaluation_system_message},
                     {"role": "user", "content": analysis_prompt}
@@ -199,13 +211,26 @@ class RLHFAgent:
             return f"📊 Feedback Analysis\n" + "="*50 + "\n" + f"Average Score: {avg_score:.2f}/5\nNumber of Feedbacks: {len(feedback_scores)}\nSuggestions: {suggestions}"
 
 async def main():
-    # Initialize the agent
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        print("Please set your OPENAI_API_KEY environment variable")
+    # Initialize the agent with Azure OpenAI configuration
+    api_key = os.getenv("AZURE_OPENAI_API_KEY")
+    endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+    deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+    api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-01")
+    
+    if not all([api_key, endpoint, deployment_name]):
+        print("Please set the following environment variables:")
+        print("• AZURE_OPENAI_API_KEY")
+        print("• AZURE_OPENAI_ENDPOINT")
+        print("• AZURE_OPENAI_DEPLOYMENT_NAME")
+        print("• AZURE_OPENAI_API_VERSION (optional, defaults to 2024-02-01)")
         return
     
-    agent = RLHFAgent(api_key=api_key)
+    agent = RLHFAgent(
+        api_key=api_key,
+        endpoint=endpoint,
+        deployment_name=deployment_name,
+        api_version=api_version
+    )
     
     print("🤖 Welcome to the RLHF Agent!")
     print("Commands:")
@@ -221,7 +246,7 @@ async def main():
             user_input = input("\n🔵 You: ").strip()
             
             if user_input.lower() == "exit":
-                print("👋 Goodbye!")
+                print("Goodbye!")
                 break
             
             if not user_input:
@@ -232,13 +257,13 @@ async def main():
             else:
                 response = await agent.run_conversation(user_input)
             
-            print(f"\n🤖 Agent: {response}")
+            print(f"\nAgent: {response}")
             
         except KeyboardInterrupt:
-            print("\n👋 Goodbye!")
+            print("\nGoodbye!")
             break
         except Exception as e:
-            print(f"\n❌ Error: {str(e)}")
+            print(f"\n Error: {str(e)}")
 
 if __name__ == "__main__":
     asyncio.run(main())
