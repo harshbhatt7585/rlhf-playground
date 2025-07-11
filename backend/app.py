@@ -4,6 +4,7 @@ from uuid import uuid4
 import subprocess
 import json
 import os
+import uvicorn
 
 app = FastAPI()
 
@@ -42,7 +43,7 @@ def ppo_train(req: PPOTrainReq):
             "--name", f"ppo-job-{job_id}",
             "-v", f"{config_path}:/app/config.json",  # mount config
             "--gpus", "all",  # ensure GPU access
-            "rlhf-playground",
+            "rlhf:latest",
             "python", "example.py", f"--config=/app/config.json"
         ])
 
@@ -61,3 +62,7 @@ def check_status(job_id: str):
         raise HTTPException(status_code=404, detail="Job ID not found")
     job = JOB_STATUS[job_id]
     return PPOTrainJob(job_id=job_id, status=job["status"], completed=job["completed"])
+
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", reload=True, port=8000)
