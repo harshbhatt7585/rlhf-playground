@@ -240,18 +240,18 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8 animate-fade-in-up">
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight bg-gradient-to-r from-white via-cyan-400 to-purple-500 bg-clip-text text-transparent">
-                Intelligent Model Alignment Through NLP
+                Align AI
               </h1>
               <p className="text-xl md:text-2xl text-gray-300 leading-relaxed">
-                Transform your AI models with our cutting-edge NLP alignment technology. 
-                Achieve unprecedented accuracy, safety, and reliability in your AI systems.
+                Transform AI models easily. 
+                Achieve unprecedented accuracy, safety, and reliability.
               </p>
               <div className="flex flex-col sm:flex-row gap-6">
                 <button className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-semibold rounded-full text-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-cyan-500/30 flex items-center gap-2">
-                  🚀 Get Started
+                  Get Started
                 </button>
                 <button className="px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-full text-lg transition-all duration-300 hover:bg-white hover:text-gray-900 hover:-translate-y-1 flex items-center gap-2">
-                  📖 Learn More
+                  Learn More
                 </button>
               </div>
             </div>
