@@ -3,3 +3,5 @@ ppo_outputs
 wandb
 reward_model
 dataset/arxiv_summarization_dataset
+.*
+__pycache__

@@ -3,8 +3,8 @@ from pydantic import BaseModel
 from uuid import uuid4
 import subprocess
 import json
-import os
 import uvicorn
+import torch
 
 app = FastAPI()
 
@@ -35,17 +35,28 @@ def ppo_train(req: PPOTrainReq):
             "config": req.config,
             "hf_dataset": req.hf_dataset
         }, f)
+    
 
     try:
         # Run Docker container in detached mode
-        subprocess.Popen([
+        use_gpu = torch.cuda.is_available() or (
+            torch.backends.mps.is_built()
+        )
+        docker_cmd = [
             "docker", "run", "--rm",
             "--name", f"ppo-job-{job_id}",
-            "-v", f"{config_path}:/app/config.json",  # mount config
-            "--gpus", "all",  # ensure GPU access
-            "rlhf:latest",
+            "-v", f"{config_path}:/app/config.json",
+        ]
+
+        if use_gpu:
+            docker_cmd += ["--gpus", "all"]
+
+        docker_cmd += [
+            "rlhf:test",
             "python", "example.py", f"--config=/app/config.json"
-        ])
+        ]
+
+        subprocess.Popen(docker_cmd)
 
         JOB_STATUS[job_id]["status"] = "running"
 
