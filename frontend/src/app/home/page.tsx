@@ -1,101 +1,136 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
+import { useState } from 'react'
 
-export default function PromptPage() {
-  const [prompt, setPrompt] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+export default function HomePage() {
+  const [dataset, setDataset] = useState('')
+  const [model, setModel] = useState('')
+  const [jobId, setJobId] = useState<string | null>(null)
+  const [status, setStatus] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    setJobId(null)
+    setStatus(null)
 
-    if (!prompt.trim()) {
-      setError('Please enter a prompt');
-      return;
-    }
-
-    setIsLoading(true);
     try {
-      // Simulate API call or agent prompt submission
-      console.log('Submitted prompt:', prompt);
-      // Reset form after successful submission
-      setPrompt('');
-    } catch (err) {
-      setError('Failed to submit prompt. Please try again.');
+      const payload = {
+        config: {
+          model_name: model,
+          reward_model_name: model,
+          per_device_train_batch_size: 1,
+          gradient_accumulation_steps: 1,
+          num_ppo_epochs: 1,
+          num_mini_batches: 1,
+          response_length: 128,
+          total_episodes: 50
+        },
+        hf_dataset: dataset
+      }
+
+      const res = await fetch('/api/train/ppo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(errText)
+      }
+
+      const data = await res.json()
+      setJobId(data.job_id)
+      pollStatus(data.job_id)
+    } catch (err: any) {
+      setError(err.message || 'Unexpected error')
     } finally {
-      setIsLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  const pollStatus = (id: string) => {
+    setStatus('Starting...')
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/status/${id}`)
+        if (!res.ok) {
+          throw new Error(await res.text())
+        }
+        const data = await res.json()
+        setStatus(data.status)
+        if (data.completed) clearInterval(interval)
+      } catch {
+        clearInterval(interval)
+        setError('Failed to fetch status')
+      }
+    }, 3000)
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex flex-col items-center justify-center px-4 py-12">
-      <h1 className="text-center text-3xl sm:text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-300 mb-8">
-        Align Your Model
-      </h1>
-      <p className="text-center text-gray-300 text-base sm:text-lg mb-10 max-w-2xl">
-        Describe how you want to align your model to get tailored responses that match your goals.
-      </p>
-      
-      <form 
-        onSubmit={handleSubmit} 
-        className="w-full max-w-lg space-y-4"
-        aria-label="Model alignment prompt form"
-      >
-        <div className="relative">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Enter your prompt..."
-            className="w-full px-6 py-4 bg-gray-800 text-white placeholder-gray-400 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out resize-y min-h-[100px]"
-            aria-label="Prompt input"
-            disabled={isLoading}
-          />
+    <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6">
+        <h1 className="text-2xl font-bold text-center">RLHF Playground</h1>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              HF Dataset ID
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. ccdv/arxiv-summarization"
+              value={dataset}
+              onChange={(e) => setDataset(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Model Name or Link
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. facebook/opt-125m"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-2 px-4 rounded-md text-white font-semibold ${
+              loading ? 'bg-indigo-300' : 'bg-indigo-600 hover:bg-indigo-700'
+            }`}
+          >
+            {loading ? 'Submitting...' : 'Start Training'}
+          </button>
+
           {error && (
-            <p className="mt-2 text-sm text-red-400" role="alert">
-              {error}
+            <p className="text-sm text-red-600 text-center">{error}</p>
+          )}
+        </form>
+
+        {jobId && (
+          <div className="mt-6 bg-gray-100 p-4 rounded-md space-y-2">
+            <p>
+              <strong>Job ID:</strong> {jobId}
             </p>
-          )}
-        </div>
-        
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={`w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-green-400 text-white font-semibold rounded-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl ${
-            isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-600 hover:to-green-500'
-          }`}
-          aria-label="Submit prompt"
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center">
-              <svg
-                className="animate-spin h-5 w-5 mr-2 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z"
-                />
-              </svg>
-              Submitting...
-            </span>
-          ) : (
-            'Submit Prompt'
-          )}
-        </button>
-      </form>
-    </div>
-  );
+            <p>
+              <strong>Status:</strong> {status}
+            </p>
+          </div>
+        )}
+      </div>
+    </main>
+  )
 }
