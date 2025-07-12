@@ -278,6 +278,7 @@ class RLHFAgent:
                                         domain: str = "general", difficulty_level: str = "medium") -> Dict:
         """Generate preference dataset using OpenAI API."""
         try:
+            print("Generating preference dataset")
             # Generate prompts for the specified task type
             prompts = await self._generate_prompts(task_type, num_samples, domain, difficulty_level)
             
@@ -344,6 +345,8 @@ class RLHFAgent:
         )
         
         prompts = [line.strip() for line in response.choices[0].message.content.split('\n') if line.strip()]
+
+
         return prompts[:num_samples]
 
     async def _generate_response(self, prompt: str, model_id: str) -> Response:
@@ -761,6 +764,7 @@ class RLHFAgent:
     async def process_function_call(self, function_name: str, arguments: Dict) -> Dict:
         """Process function calls from OpenAI."""
         if function_name == "generate_preference_dataset":
+            print("Generating preference dataset")
             return await self.generate_preference_dataset(**arguments)
         elif function_name == "train_reward_model":
             return await self.train_reward_model(**arguments)
@@ -779,17 +783,30 @@ class RLHFAgent:
             messages = [
                 {
                     "role": "system",
-                    "content": """You are an RLHF (Reinforcement Learning from Human Feedback) assistant. 
-                    You help users generate preference datasets, train reward models, and evaluate model performance.
-                    
-                    Use the available functions to:
-                    1. Generate preference datasets for different tasks
-                    2. Train reward models using the preference data
-                    3. Evaluate trained models on various metrics
-                    4. Export datasets in different formats
-                    5. Provide statistics about the datasets
-                    
-                    When users ask for help with RLHF tasks, call the appropriate functions."""
+                    "content": """You are an advanced RLHF (Reinforcement Learning from Human Feedback) assistant designed to assist with reinforcement learning tasks. Your role is to interpret user requests and execute the appropriate functions to support RLHF workflows. You have access to the following functions:
+
+            1. `generate_preference_dataset`: Generate preference datasets for tasks like generation, classification, summarization, question answering, or creative writing.
+            2. `train_reward_model`: Train reward models using the preference dataset.
+            3. `evaluate_model`: Evaluate trained models using metrics like preference accuracy, response quality, or human alignment.
+            4. `get_dataset_stats`: Provide statistics about the preference dataset, including task distribution and preference labels.
+            5. `export_dataset`: Export the preference dataset in formats like JSON or CSV.
+
+            **Instructions:**
+            - Analyze the user's input to determine if it relates to an RLHF task. If it does, select the most appropriate function and execute it with the correct parameters.
+            - If the input is ambiguous, ask for clarification to ensure the correct function is called.
+            - For non-RLHF queries, provide a helpful conversational response and suggest relevant RLHF tasks the user might explore.
+            - Always return clear, concise, and natural language responses, summarizing function outputs when applicable.
+            - If no function is needed, respond conversationally and offer guidance on available RLHF capabilities.
+
+            **Example Inputs and Actions:**
+            - "Generate a dataset for summarization" → Call `generate_preference_dataset` with task_type="summarization".
+            - "Train a model" → Call `train_reward_model` with default parameters or ask for specifics.
+            - "Show dataset stats" → Call `get_dataset_stats`.
+            - "What's RLHF?" → Provide a conversational explanation and suggest related functions.
+
+            **Error Handling:**
+            - If a function call fails or the input is invalid, return an error message with guidance on how to correct the request.
+            - If the user input doesn't match any function, respond conversationally and suggest relevant RLHF tasks."""
                 },
                 {"role": "user", "content": user_input}
             ]
