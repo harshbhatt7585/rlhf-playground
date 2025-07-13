@@ -11,3 +11,4 @@ scipy
 peft 
 einops
 dotenv
+openai
