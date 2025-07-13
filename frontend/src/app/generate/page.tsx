@@ -53,7 +53,7 @@ export default function Generate() {
     try {
       const body = { seed_examples: examples, num_generations: 3 };
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/generate/preferences`,
+        `api/generate/preferences`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -201,3 +201,4 @@ export default function Generate() {
     </div>
   );
 }
+
