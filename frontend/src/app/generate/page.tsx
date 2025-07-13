@@ -18,6 +18,7 @@ export default function Generate() {
   const [rejected, setRejected] = useState('');
   const [examples, setExamples] = useState<PreferenceExample[]>([]);
   const [generated, setGenerated] = useState<PreferenceExample[]>([]);
+  const [numGenerations, setNumGenerations] = useState<number>(3);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -47,13 +48,17 @@ export default function Generate() {
       setError('Please add at least one example');
       return;
     }
+    if (numGenerations < 1) {
+      setError('Number of generations must be at least 1');
+      return;
+    }
     setIsLoading(true);
     setError('');
 
     try {
-      const body = { seed_examples: examples, num_generations: 3 };
+      const body = { seed_examples: examples, num_generations: numGenerations };
       const res = await fetch(
-        `api/generate/preferences`,
+        `/api/generate/preferences`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -89,6 +94,17 @@ export default function Generate() {
           aria-label="Model alignment prompt form"
         >
           <div className="space-y-4">
+            <label className="block text-gray-300">
+              Number of Generations:
+              <input
+                type="number"
+                min={1}
+                value={numGenerations}
+                onChange={(e) => setNumGenerations(Number(e.target.value))}
+                className="mt-1 w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition"
+                disabled={isLoading}
+              />
+            </label>
             <textarea
               value={promptText}
               onChange={(e) => setPromptText(e.target.value)}
@@ -201,4 +217,3 @@ export default function Generate() {
     </div>
   );
 }
-
