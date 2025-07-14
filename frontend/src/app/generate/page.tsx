@@ -59,7 +59,9 @@ export default function Generate() {
     setError('');
 
     try {
-      const body = { seed_examples: examples, num_generations: numGenerations };
+      const body = { seed_examples: examples, num_generations: numGenerations,
+        hf_token: hfToken, upload_to_hf: true, repo_id: repoId
+       };
       const res = await fetch(
         `/api/generate/preferences`,
         {
@@ -147,6 +149,28 @@ export default function Generate() {
                 disabled={isLoading}
               />
             </label>
+            <label className="block text-gray-300">
+              HuggingFace Token:
+              <input
+                type="password"
+                value={hfToken}
+                onChange={(e) => setHfToken(e.target.value)}
+                placeholder="Your HuggingFace access token"
+                className="mt-1 w-full px-3 py-2 bg-gray-700 text-white placeholder-gray-400 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                disabled={isLoading}
+              />
+            </label>
+            <label className="block text-gray-300">
+              Repository ID:
+              <input
+                type="text"
+                value={repoId}
+                onChange={(e) => setRepoId(e.target.value)}
+                placeholder="username/dataset-name"
+                className="mt-1 w-full px-3 py-2 bg-gray-700 text-white placeholder-gray-400 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                disabled={isLoading}
+              />
+            </label>
             <textarea
               value={promptText}
               onChange={(e) => setPromptText(e.target.value)}
@@ -199,6 +223,16 @@ export default function Generate() {
             >
               {isLoading ? 'Generating...' : 'Generate'}
             </button>
+            {generated.length > 0 && (
+              <button
+                type="button"
+                onClick={uploadToHf}
+                disabled={isUploading || !hfToken.trim() || !repoId.trim()}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-400 text-white font-semibold rounded-lg shadow-lg transform transition hover:-translate-y-1 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUploading ? 'Uploading...' : 'Upload to HF'}
+              </button>
+            )}
           </div>
         </form>
 
@@ -252,37 +286,6 @@ export default function Generate() {
                   </p>
                 </div>
               ))}
-            </div>
-            
-            <div className="mt-6 bg-gray-800 p-6 rounded-2xl shadow-lg space-y-4">
-              <h3 className="text-lg font-semibold text-white mb-4">
-                Upload to HuggingFace
-              </h3>
-              <div className="space-y-4">
-                <input
-                  type="password"
-                  value={hfToken}
-                  onChange={(e) => setHfToken(e.target.value)}
-                  placeholder="HuggingFace Token"
-                  className="w-full px-5 py-3 bg-gray-700 text-white placeholder-gray-400 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  disabled={isUploading}
-                />
-                <input
-                  type="text"
-                  value={repoId}
-                  onChange={(e) => setRepoId(e.target.value)}
-                  placeholder="Repository ID (e.g., username/dataset-name)"
-                  className="w-full px-5 py-3 bg-gray-700 text-white placeholder-gray-400 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  disabled={isUploading}
-                />
-                <button
-                  onClick={uploadToHf}
-                  disabled={isUploading || !hfToken.trim() || !repoId.trim()}
-                  className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-400 text-white font-semibold rounded-lg shadow-lg transform transition hover:-translate-y-1 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isUploading ? 'Uploading...' : 'Upload to HuggingFace'}
-                </button>
-              </div>
             </div>
           </div>
         )}
