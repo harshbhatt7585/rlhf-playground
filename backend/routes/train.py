@@ -19,6 +19,16 @@ class PPOTrainJob(BaseModel):
     completed: bool
 
 
+
+class RewardModelReq(BaseModel):
+    base_model_repo: str
+    dataset: str
+
+class RewardModelRes(BaseModel):
+    job_id: str
+
+
+
 router  = APIRouter(prefix="/train")
 
 
@@ -71,3 +81,56 @@ def check_status(job_id: str):
         raise HTTPException(status_code=404, detail="Job ID not found")
     job = JOB_STATUS[job_id]
     return PPOTrainJob(job_id=job_id, status=job["status"], completed=job["completed"])
+
+
+
+
+@app.post("/train/reward_model", response_model=RewardModelRes)
+def train_reward_model(req: RewardModelReq):
+    job_id = str(uuid4())
+    JOB_STATUS[job_id] = {"status": "starting", "completed": False}
+
+    config = {
+        "base_model_repo": req.base_model_repo,
+        "dataset": req.dataset
+    }
+    config_path = f"/tmp/{job_id}_reward_config.json"
+    with open(config_path, "w") as f:
+        json.dump(config, f)
+
+    try:
+        use_gpu = torch.cuda.is_available() or torch.backends.mps.is_built()
+        docker_cmd = [
+            "docker", "run", "--rm",
+            "--name", f"reward-job-{job_id}",
+            "-v", f"{config_path}:/app/reward_config.json",
+        ]
+        # if use_gpu:
+        #     docker_cmd += ["--gpus", "all"]
+
+        docker_cmd += [
+            "-e", f"WANDB_API_KEY={os.getenv('WANDB_API_KEY')}",
+            "train_rm:test"
+        ]
+
+        subprocess.Popen(docker_cmd)
+        JOB_STATUS[job_id]["status"] = "running"
+
+    except Exception as e:
+        JOB_STATUS[job_id]["status"] = "failed"
+        JOB_STATUS[job_id]["completed"] = True
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return RewardModelRes(job_id=job_id)
+
+
+@app.get("/reward_model/status/{job_id}")
+def reward_status(job_id: str):
+    if job_id not in JOB_STATUS:
+        raise HTTPException(status_code=404, detail="Job ID not found")
+    job = JOB_STATUS[job_id]
+    return PPOTrainJob(job_id=job_id, status=job["status"], completed=job["completed"])
+
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
