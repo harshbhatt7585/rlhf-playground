@@ -1,0 +1,15 @@
+torch
+torchvision
+torchaudio
+transformers
+trl
+datasets
+huggingface_hub
+accelerate
+sentencepiece 
+scipy
+peft 
+einops
+dotenv
+openai
+wandb
