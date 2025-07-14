@@ -11,6 +11,9 @@ from openai import AsyncAzureOpenAI
 from dotenv import load_dotenv
 import uvicorn
 
+from routes.generate import router as generate_router
+from routes.train import router as train_rotuer
+
 load_dotenv()
 
 # Azure OpenAI env vars
@@ -21,7 +24,8 @@ AZURE_API_VERSION = "2023-05-15"
 
 app = FastAPI()
 
-
+app.include_router(generate_router)
+app.include_router(train_rotuer)
 
 
 @app.on_event("startup")
@@ -30,7 +34,9 @@ async def startup_event():
         api_key=AZURE_OPENAI_KEY,
         api_version=AZURE_API_VERSION,
         azure_endpoint=AZURE_OPENAI_ENDPOINT,
-    )
+)
+
+
 
 
 
