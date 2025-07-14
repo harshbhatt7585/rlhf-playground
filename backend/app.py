@@ -195,12 +195,11 @@ def train_reward_model(req: RewardModelReq):
             "--name", f"reward-job-{job_id}",
             "-v", f"{config_path}:/app/reward_config.json",
         ]
-        if use_gpu:
-            docker_cmd += ["--gpus", "all"]
+        # if use_gpu:
+        #     docker_cmd += ["--gpus", "all"]
 
         docker_cmd += [
-            "rlhf:test",  # Assuming same image; swap if needed
-            "python", "train_reward_model.py", "--config=/app/reward_config.json"
+            "train_rm:test"
         ]
 
         subprocess.Popen(docker_cmd)
@@ -223,4 +222,4 @@ def reward_status(job_id: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
