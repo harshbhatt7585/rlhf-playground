@@ -13,6 +13,7 @@ import uvicorn
 
 from routes.generate import router as generate_router
 from routes.train import router as train_rotuer
+from routes.dataset import router as dataset_router
 
 load_dotenv()
 
@@ -26,6 +27,7 @@ app = FastAPI()
 
 app.include_router(generate_router)
 app.include_router(train_rotuer)
+app.include_router(dataset_router)
 
 
 @app.on_event("startup")
