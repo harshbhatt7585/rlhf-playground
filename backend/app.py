@@ -4,9 +4,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI
-from fastapi import HTTPException
-from pydantic import BaseModel
-from openai import AsyncAzureOpenAI
 import uvicorn
 
 from routes.generate import router as generate_router

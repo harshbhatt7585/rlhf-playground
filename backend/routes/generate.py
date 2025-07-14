@@ -19,7 +19,7 @@ if not all([AZURE_OPENAI_KEY, AZURE_OPENAI_ENDPOINT, AZURE_DEPLOYMENT]):
     )
 
 
-router = APIRouter(prefix='/dataset')
+router = APIRouter(prefix='/generate')
 
 openai_client = AsyncAzureOpenAI(
     api_key=AZURE_OPENAI_KEY,
@@ -92,6 +92,7 @@ Now generate {req.num_generations} new examples in the same format:
             except Exception:
                 # you could log the parse error here if needed
                 continue
+        print(generated)
 
         return PreferenceGenRes(generated=generated)
 
