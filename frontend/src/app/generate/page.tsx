@@ -21,6 +21,10 @@ export default function Generate() {
   const [numGenerations, setNumGenerations] = useState<number>(3);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hfToken, setHfToken] = useState('');
+  const [repoId, setRepoId] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
   const addExample = () => {
     if (!promptText.trim() || !chosen.trim() || !rejected.trim()) {
@@ -57,14 +61,11 @@ export default function Generate() {
 
     try {
       const body = { seed_examples: examples, num_generations: numGenerations };
-      const res = await fetch(
-        `/api/generate/preferences`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        }
-      );
+      const res = await fetch(`/api/generate/preferences`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       const data: PreferenceGenRes = await res.json();
       setGenerated(data.generated);
@@ -73,6 +74,38 @@ export default function Generate() {
       setError('Failed to generate preferences. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const uploadToHf = async () => {
+    if (!hfToken || !repoId) {
+      setError('Please provide both Hugging Face token and repo ID');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+    setUploadSuccess(null);
+
+    try {
+      const res = await fetch('/api/dataset/upload_to_hf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dataset_path: './data', // Update if you're saving generated data
+          repo_id: repoId,
+          hf_token: hfToken,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+      const data = await res.json();
+      setUploadSuccess(`Uploaded to HF! Job ID: ${data.job_id}`);
+    } catch (err) {
+      console.error(err);
+      setError('Upload to Hugging Face failed.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -88,10 +121,10 @@ export default function Generate() {
           </p>
         </div>
 
+        {/* Form Block */}
         <form
           onSubmit={handleSubmit}
           className="bg-gray-800 p-6 rounded-2xl shadow-lg space-y-6"
-          aria-label="Model alignment prompt form"
         >
           <div className="space-y-4">
             <label className="block text-gray-300">
@@ -160,6 +193,7 @@ export default function Generate() {
           </div>
         </form>
 
+        {/* Display Seed Examples */}
         {examples.length > 0 && (
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             {examples.map((ex, idx) => (
@@ -188,28 +222,36 @@ export default function Generate() {
           </div>
         )}
 
+        {/* Upload to HuggingFace */}
         {generated.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-semibold text-white mb-4">
-              Generated Preferences
+          <div className="mt-12 bg-gray-800 p-6 rounded-2xl shadow-xl space-y-6">
+            <h2 className="text-2xl text-white font-semibold text-center">
+              Upload to Hugging Face
             </h2>
             <div className="space-y-4">
-              {generated.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 bg-gray-800 rounded-xl border border-gray-700 shadow-inner"
-                >
-                  <p className="text-gray-200 mb-1">
-                    <span className="font-medium">Prompt:</span> {item.prompt}
-                  </p>
-                  <p className="text-green-300 mb-1">
-                    <span className="font-medium">Chosen:</span> {item.chosen}
-                  </p>
-                  <p className="text-red-300">
-                    <span className="font-medium">Rejected:</span> {item.rejected}
-                  </p>
-                </div>
-              ))}
+              <input
+                value={hfToken}
+                onChange={(e) => setHfToken(e.target.value)}
+                placeholder="Hugging Face Token"
+                type="password"
+                className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+              <input
+                value={repoId}
+                onChange={(e) => setRepoId(e.target.value)}
+                placeholder="Repo ID (e.g., username/my-dataset)"
+                className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              />
+              <button
+                onClick={uploadToHf}
+                disabled={uploading}
+                className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg shadow transition disabled:opacity-50"
+              >
+                {uploading ? 'Uploading to HF...' : 'Upload to Hugging Face'}
+              </button>
+              {uploadSuccess && (
+                <p className="text-green-400 text-sm text-center">{uploadSuccess}</p>
+              )}
             </div>
           </div>
         )}
