@@ -223,16 +223,6 @@ export default function Generate() {
             >
               {isLoading ? 'Generating...' : 'Generate'}
             </button>
-            {generated.length > 0 && (
-              <button
-                type="button"
-                onClick={uploadToHf}
-                disabled={isUploading || !hfToken.trim() || !repoId.trim()}
-                className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-400 text-white font-semibold rounded-lg shadow-lg transform transition hover:-translate-y-1 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isUploading ? 'Uploading...' : 'Upload to HF'}
-              </button>
-            )}
           </div>
         </form>
 
