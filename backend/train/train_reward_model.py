@@ -3,7 +3,7 @@ import logging
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset as TorchDataset
-from datasets import load_from_disk, Dataset as HFDataset
+from datasets import load_from_disk, Dataset as HFDataset, load_dataset
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -115,7 +115,7 @@ class RewardDataCollator:
         return metrics
 
 
-def train_reward_model(model_name="distilbert-base-uncased", dataset_path="dataset/arxiv_summarization_dataset"):
+def train_reward_model(model_name="distilbert-base-uncased", dataset_path="dataset/arxiv_summarization_dataset", load_from_disk=True):
     logger.info("Loading tokenizer and model...")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     if tokenizer.pad_token is None:
@@ -129,8 +129,13 @@ def train_reward_model(model_name="distilbert-base-uncased", dataset_path="datas
     model.resize_token_embeddings(len(tokenizer))
 
     logger.info("Loading dataset from disk...")
-    full_dataset = load_from_disk(dataset_path)
-    dataset = full_dataset.train_test_split(test_size=0.1, seed=42)
+
+    if load_from_disk:
+        full_dataset = load_from_disk(dataset_path)
+        dataset = full_dataset.train_test_split(test_size=0.1, seed=42)
+    else:
+        dataset = load_dataset(dataset_path)
+    
     train_dataset = RewardDataset(dataset["train"], tokenizer)
     eval_dataset = RewardDataset(dataset["test"], tokenizer)
     data_collator = RewardDataCollator(tokenizer)
@@ -183,7 +188,7 @@ def train_reward_model(model_name="distilbert-base-uncased", dataset_path="datas
 
 if __name__ == "__main__":
     try:
-        train_reward_model("microsoft/DialoGPT-small", "dataset/arxiv_summarization_dataset")
+        train_reward_model("microsoft/DialoGPT-small", "Anthropic/hh-rlhf", load_from_disk=False)
     except Exception as e:
         logger.error(f"Error in main: {str(e)}")
         raise
