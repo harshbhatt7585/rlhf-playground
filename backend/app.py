@@ -1,10 +1,4 @@
 import os
-import json
-import subprocess
-import torch
-from uuid import uuid4
-from typing import List
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from openai import AsyncAzureOpenAI
@@ -37,11 +31,6 @@ async def startup_event():
         api_version=AZURE_API_VERSION,
         azure_endpoint=AZURE_OPENAI_ENDPOINT,
 )
-
-
-
-
-
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

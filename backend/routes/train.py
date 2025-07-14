@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from uuid import uuid4
 import json
 import torch
+import os
 
 class PPOTrainReq(BaseModel):
     config: dict
