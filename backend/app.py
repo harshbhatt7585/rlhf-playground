@@ -13,6 +13,7 @@ import uvicorn
 
 load_dotenv()
 
+
 # Azure OpenAI env vars
 AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -199,6 +200,7 @@ def train_reward_model(req: RewardModelReq):
         #     docker_cmd += ["--gpus", "all"]
 
         docker_cmd += [
+            "-e", f"WANDB_API_KEY={os.getenv('WANDB_API_KEY')}",
             "train_rm:test"
         ]
 
