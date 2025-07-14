@@ -1,0 +1,28 @@
+create these:
+├── models/                # TinyLlama, DeepSeek integrations
+│   └── load_model.py
+│
+├── trainers/              # PPO, DPO, ORPO logic using TRL
+│   ├── ppo_trainer.py
+│   └── dpo_trainer.py
+│
+├── reward_models/         # Reward models from comparisons
+│   └── reward_model.py
+│
+├── data/                  # Preference or comparison data
+│   ├── synthetic/
+│   └── real/
+│
+├── scripts/               # CLI utilities to run training
+│   ├── train_ppo.py
+│   ├── train_dpo.py
+│   └── evaluate.py
+│
+├── ui/                    # Optional web UI to collect preferences
+│   └── streamlit_app.py
+│
+├── configs/
+│   └── ppo.yaml
+│
+├── requirements.txt
+└── README.md

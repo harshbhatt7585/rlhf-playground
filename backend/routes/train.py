@@ -85,7 +85,7 @@ def check_status(job_id: str):
 
 
 
-@app.post("/train/reward_model", response_model=RewardModelRes)
+@router.post("/reward_model", response_model=RewardModelRes)
 def train_reward_model(req: RewardModelReq):
     job_id = str(uuid4())
     JOB_STATUS[job_id] = {"status": "starting", "completed": False}
@@ -124,7 +124,7 @@ def train_reward_model(req: RewardModelReq):
     return RewardModelRes(job_id=job_id)
 
 
-@app.get("/reward_model/status/{job_id}")
+@router.get("/reward_model/status/{job_id}")
 def reward_status(job_id: str):
     if job_id not in JOB_STATUS:
         raise HTTPException(status_code=404, detail="Job ID not found")
@@ -132,5 +132,3 @@ def reward_status(job_id: str):
     return PPOTrainJob(job_id=job_id, status=job["status"], completed=job["completed"])
 
 
-if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

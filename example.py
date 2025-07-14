@@ -3,7 +3,7 @@ import os
 from dataclasses import dataclass
 from typing import List, Optional
 from datasets import load_dataset
-from trainers.ppo_trainer import PPOTrainerWrapper
+from backend.trainer.ppo_trainer import PPOTrainerWrapper
 from dataset.prompt_dataset import PromptDataset
 from dotenv import load_dotenv
 
