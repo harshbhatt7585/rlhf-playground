@@ -11,7 +11,7 @@ from transformers import (
     Trainer
 )
 import wandb 
-from reward_models.reward_trainer import RewardTrainer
+from backend.trainer.reward_trainer import RewardTrainer
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
