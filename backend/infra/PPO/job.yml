@@ -1,0 +1,10 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+command: python example.py
+code: ..
+environment:
+  image: quntaacr.azurecr.io/ppo-train:test
+compute: azureml:qunta-teslat4
+experiment_name: ppo-training-experiment
+display_name: PPO-Training-Docker
+resources:
+  instance_count: 1
