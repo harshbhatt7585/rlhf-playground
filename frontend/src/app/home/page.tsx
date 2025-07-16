@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Play, Pause, RotateCcw, CheckCircle, XCircle, Clock, Zap, Database, Bot, Settings, Info } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function HomePage() {
   const [dataset, setDataset] = useState('')
@@ -13,6 +14,8 @@ export default function HomePage() {
   const [progress, setProgress] = useState(0)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [jobs, setJobs] = useState<any[]>([])
+  const router = useRouter()
+
   
   // Advanced configuration
   const [config, setConfig] = useState({
@@ -70,10 +73,10 @@ export default function HomePage() {
         hf_dataset: dataset
       }
 
-      const res = await fetch('/api/train/ppo', {
+      const res = await fetch('/api/train/ppo/train-azure-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({}),
       })
 
       if (!res.ok) {
@@ -93,6 +96,9 @@ export default function HomePage() {
         startTime: new Date(),
         status: 'Starting...'
       }])
+
+      router.push(`/status/${data.job_id}`)
+      
     } catch (err: any) {
       setError(err.message || 'Unexpected error')
     } finally {
