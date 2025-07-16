@@ -144,7 +144,7 @@ def reward_status(job_id: str):
     return PPOTrainJob(job_id=job_id, status=job["status"], completed=job["completed"])
 
 
-@router.post('/ppo/submit-job', response_model=AzureTrainRes)
+@router.post('/ppo/train-azure-job', response_model=AzureTrainRes)
 def ppo_azure_submit_job():
     try:
         result = subprocess.run(
