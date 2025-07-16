@@ -148,7 +148,7 @@ def reward_status(job_id: str):
 def ppo_azure_submit_job():
     try:
         result = subprocess.run(
-            ['az', 'ml', 'job', 'create', '--file', '../infra/PPO/job.yml', '--query', 'name', '-o', 'tsv'],
+            ['az', 'ml', 'job', 'create', '--file', './infra/PPO/job.yml', '--query', 'name', '-o', 'tsv'],
             capture_output=True, text=True, check=True
         )
         job_id = result.stdout.strip()
