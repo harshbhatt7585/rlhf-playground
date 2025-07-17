@@ -8,14 +8,18 @@ RUN apt-get update && apt-get install -y \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
+
 RUN ln -sf /usr/bin/python3 /usr/bin/python
 
-COPY requirements.txt /app/requirements.txt
 WORKDIR /app
 
+COPY requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir -r requirements.txt
 
+
 COPY . /app
 
-CMD ["python", "example.py"]
+
+ENTRYPOINT ["python", "train.py"]
+CMD []
