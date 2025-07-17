@@ -72,7 +72,7 @@ JOB_STATUS = {}
 
 
 @router.post("/ppo", response_model=PPOTrainRes)
-def ppo_train(req: PPOTrainReq):
+async def ppo_train(req: PPOTrainReq):
     job_id = str(uuid4())
     JOB_STATUS[job_id] = {"status": "starting", "completed": False}
 
@@ -121,7 +121,7 @@ def check_status(job_id: str):
 
 
 @router.post("/reward_model", response_model=RewardModelRes)
-def train_reward_model(req: RewardModelReq):
+async def train_reward_model(req: RewardModelReq):
     job_id = str(uuid4())
     JOB_STATUS[job_id] = {"status": "starting", "completed": False}
 
@@ -169,7 +169,7 @@ def reward_status(job_id: str):
 
 
 @router.post("/ppo/train-azure-job", response_model=AzureTrainRes)
-def ppo_azure_submit_job(args: AzureTrainArgs):
+async def ppo_azure_submit_job(args: AzureTrainArgs):
     """
     Submit a CommandJob to Azure ML Compute using the Python SDK.
     All PPO training parameters are passed to the container's entrypoint.
@@ -242,7 +242,7 @@ async def websocket_logs(websocket: WebSocket, job_id: str):
 
 
 @router.get('/ppo/azure-status/{job_id}', response_model=AzureTrainStatus)
-def ppo_azure_status(job_id: str):
+async def ppo_azure_status(job_id: str):
     try:
         result = subprocess.run(
             ['az', 'ml', 'job', 'show', '--name', job_id, '--query', 'status', '-o', 'tsv'],
