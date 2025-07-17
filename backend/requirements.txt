@@ -13,3 +13,5 @@ einops
 dotenv
 openai
 wandb
+marshmallow<3.20.0
+azure-ai-ml

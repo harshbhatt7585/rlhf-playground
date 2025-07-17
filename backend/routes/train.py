@@ -1,13 +1,17 @@
 
 from fastapi import APIRouter, HTTPException
 import subprocess
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from uuid import uuid4
 import json
 import torch
 import os
 import subprocess
 import uuid
+from azure.ai.ml import MLClient
+from azure.ai.ml import MLClient, command
+from azure.ai.ml.entities import Environment as MLEnvironment
+from azure.identity import DefaultAzureCredential
 
 class PPOTrainReq(BaseModel):
     config: dict
@@ -39,6 +43,23 @@ class AzureTrainStatus(BaseModel):
     job_id: str
     status: str
 
+
+class AzureTrainArgs(BaseModel):
+    model_name: str = Field("HuggingFaceTB/SmolLM-135M-Instruct", description="Policy model name or path")
+    reward_model_name: str = Field("HuggingFaceTB/SmolLM-135M-Instruct", description="Reward model name or path")
+    per_device_train_batch_size: int = Field(1, ge=1)
+    gradient_accumulation_steps: int = Field(1, ge=1)
+    num_ppo_epochs: int = Field(1, ge=1)
+    num_mini_batches: int = Field(1, ge=1)
+    response_length: int = Field(10, ge=1)
+    total_episodes: int = Field(1, ge=1)
+    upload_to_hf: bool = Field(True)
+    repo_id: str = Field("test-model")
+    dataset_name: str = Field("ccdv/arxiv-summarization")
+    dataset_subset: str = Field("section")
+    train_samples: int = Field(10, ge=1)
+    eval_samples: int = Field(10, ge=1)
+    prompt_max_length: int = Field(2048, ge=1)
 
 
 router  = APIRouter(prefix="/train")
@@ -144,18 +165,54 @@ def reward_status(job_id: str):
     return PPOTrainJob(job_id=job_id, status=job["status"], completed=job["completed"])
 
 
-@router.post('/ppo/train-azure-job', response_model=AzureTrainRes)
-def ppo_azure_submit_job():
-    try:
-        result = subprocess.run(
-            ['az', 'ml', 'job', 'create', '--file', './infra/PPO/job.yml', '--query', 'name', '-o', 'tsv'],
-            capture_output=True, text=True, check=True
-        )
-        job_id = result.stdout.strip()
-        return AzureTrainRes(job_id=job_id)
 
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"Azure ML job submission failed: {e.stderr.strip()}")
+@router.post("/ppo/train-azure-job", response_model=AzureTrainRes)
+def ppo_azure_submit_job(args: AzureTrainArgs):
+    """
+    Submit a CommandJob to Azure ML Compute using the Python SDK.
+    All PPO training parameters are passed to the container's entrypoint.
+    """
+    try:
+        # Validate environment
+        subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
+        resource_group = os.getenv("AZURE_RESOURCE_GROUP")
+        workspace = os.getenv("AZURE_WORKSPACE_NAME")
+        if not all([subscription_id, resource_group, workspace]):
+            raise ValueError("Set AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, AZURE_WORKSPACE_NAME env vars.")
+
+        # Initialize ML client
+        ml_client = MLClient(
+            credential=DefaultAzureCredential(),
+            subscription_id=subscription_id,
+            resource_group_name=resource_group,
+            workspace_name=workspace
+        )
+
+        # Build command string from args
+        cmd_parts = ["python train.py"] + [f"--{k} {v}" for k, v in args.dict().items()]
+        command_str = " ".join(cmd_parts)
+
+        docker_env = MLEnvironment(
+            name=f"ppo-docker-env-{uuid.uuid4()}",
+            image="quntaacr.azurecr.io/ppo-train:test",
+            description="Custom Docker environment for PPO training"
+        )
+
+        # Create and submit the job
+        job_name = f"ppo-job-{uuid.uuid4()}"
+        job = command(
+            name=job_name,
+            code="./",  # Context folder containing train.py
+            command=command_str,
+            environment=docker_env,
+            compute="qunta-teslat4"
+        )
+
+        submitted = ml_client.jobs.create_or_update(job)
+        return AzureTrainRes(job_id=submitted.name)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 
