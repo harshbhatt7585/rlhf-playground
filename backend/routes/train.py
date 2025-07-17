@@ -12,6 +12,7 @@ from azure.ai.ml import MLClient
 from azure.ai.ml import MLClient, command
 from azure.ai.ml.entities import Environment as MLEnvironment
 from azure.identity import DefaultAzureCredential
+import asyncio
 
 from fastapi import WebSocket
 
