@@ -13,6 +13,8 @@ from azure.ai.ml import MLClient, command
 from azure.ai.ml.entities import Environment as MLEnvironment
 from azure.identity import DefaultAzureCredential
 
+from fastapi import WebSocket
+
 class PPOTrainReq(BaseModel):
     config: dict
     hf_dataset: str
@@ -213,6 +215,29 @@ def ppo_azure_submit_job(args: AzureTrainArgs):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+@router.websocket("/ws/logs/{job_id}")
+async def websocket_logs(websocket: WebSocket, job_id: str):
+    await websocket.accept()
+
+    process = await asyncio.create_subprocess_exec(
+        "az", "ml", "job", "stream", "--name", job_id,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+
+    while True:
+        line = await process.stdout.readline()
+        if not line:
+            break
+        await websocket.send_text(line.decode())
+
+    await websocket.close()
+
+
 
 
 
