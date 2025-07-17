@@ -189,7 +189,7 @@ def ppo_azure_submit_job(args: AzureTrainArgs):
         )
 
         # Build command string from args
-        cmd_parts = ["python train.py"] + [f"--{k} {v}" for k, v in args.dict().items()]
+        cmd_parts = ["python example.py"] + [f"--{k} {v}" for k, v in args.dict().items()]
         command_str = " ".join(cmd_parts)
 
         docker_env = MLEnvironment(
